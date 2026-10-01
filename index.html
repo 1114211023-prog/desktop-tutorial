@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>隨機抽籤</title>
+    <style>
+      :root {
+        --bg: #f4f7ff;
+        --panel: #ffffff;
+        --primary: #4f46e5;
+        --primary-dark: #3730a3;
+        --accent: #22c55e;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --shadow: rgba(79, 70, 229, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+        background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+        color: var(--text);
+      }
+
+      .app {
+        width: min(90vw, 760px);
+        background: var(--panel);
+        border-radius: 24px;
+        box-shadow: 0 20px 45px var(--shadow);
+        padding: 32px 28px;
+      }
+
+      h1 {
+        margin: 0 0 20px;
+        text-align: center;
+        font-size: clamp(2rem, 4vw, 3rem);
+      }
+
+      .winner-box {
+        padding: 28px 20px;
+        background: linear-gradient(135deg, #ede9fe 0%, #dbeafe 100%);
+        border-radius: 18px;
+        text-align: center;
+        margin-bottom: 24px;
+        min-height: 140px;
+        display: grid;
+        place-items: center;
+      }
+
+      .winner-label {
+        font-size: 0.95rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .winner-name {
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        color: var(--primary-dark);
+        min-height: 1.4em;
+      }
+
+      .form-group {
+        margin-top: 16px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
+
+      textarea {
+        width: 100%;
+        height: 180px;
+        border: 2px solid #dfe7ff;
+        border-radius: 14px;
+        resize: vertical;
+        padding: 16px;
+        font-size: 1rem;
+        line-height: 1.7;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+      }
+
+      .actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        flex: 1;
+        min-width: 140px;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.2s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .draw-btn {
+        background: var(--primary);
+        color: white;
+      }
+
+      .draw-btn:hover {
+        background: var(--primary-dark);
+      }
+
+      .reset-btn {
+        background: #e5e7eb;
+        color: var(--text);
+      }
+
+      .reset-btn:hover {
+        background: #d1d5db;
+      }
+
+      .hint {
+        margin-top: 14px;
+        font-size: 0.9rem;
+        color: var(--muted);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <h1>🎲 隨機抽籤</h1>
+
+      <div class="winner-box">
+        <div>
+          <div class="winner-label">中獎者</div>
+          <div id="winner" class="winner-name">等待抽籤...</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="names">抽籤名單（每行一個名字）</label>
+        <textarea id="names">小明
+小華
+美玲
+阿強
+小雨
+小琪</textarea>
+      </div>
+
+      <div class="actions">
+        <button class="draw-btn" id="drawBtn">開始抽籤</button>
+        <button class="reset-btn" id="resetBtn">重置</button>
+      </div>
+
+      <div class="hint">可直接輸入姓名，每行一個人，然後按開始抽籤。</div>
+    </main>
+
+    <script>
+      const namesInput = document.getElementById('names');
+      const winnerDisplay = document.getElementById('winner');
+      const drawBtn = document.getElementById('drawBtn');
+      const resetBtn = document.getElementById('resetBtn');
+
+      const defaultNames = [
+        '小明',
+        '小華',
+        '美玲',
+        '阿強',
+        '小雨',
+        '小琪'
+      ];
+
+      function getParticipants() {
+        const raw = namesInput.value;
+        const participants = raw
+          .split(/\n|,|，|、|；/)
+          .map(name => name.trim())
+          .filter(name => name.length > 0);
+
+        return participants;
+      }
+
+      function setWinner(name) {
+        winnerDisplay.textContent = name;
+      }
+
+      function resetWinner() {
+        setWinner('等待抽籤...');
+      }
+
+      function drawWinner() {
+        const participants = getParticipants();
+
+        if (participants.length === 0) {
+          setWinner('請先輸入名單');
+          return;
+        }
+
+        let currentIndex = 0;
+        let loopCount = 0;
+        const maxLoop = 20;
+
+        const interval = setInterval(() => {
+          const nextName = participants[currentIndex % participants.length];
+          setWinner(nextName);
+          currentIndex += 1;
+          loopCount += 1;
+
+          if (loopCount >= maxLoop) {
+            clearInterval(interval);
+            const finalWinner = participants[Math.floor(Math.random() * participants.length)];
+            setWinner(finalWinner);
+          }
+        }, 80);
+      }
+
+      drawBtn.addEventListener('click', drawWinner);
+      resetBtn.addEventListener('click', () => {
+        namesInput.value = defaultNames.join('\n');
+        resetWinner();
+      });
+
+      namesInput.value = defaultNames.join('\n');
+      resetWinner();
+    </script>
+  </body>
+</html>
