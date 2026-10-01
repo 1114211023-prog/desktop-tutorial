@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="theme-color" content="#f7f5f0">
+	<title>好運抽籤｜今天輪到誰？</title>
+	<style>
+		:root {
+			color-scheme: light;
+			--ink: #20271f;
+			--muted: #788078;
+			--paper: #f7f5f0;
+			--green: #2f684d;
+			--green-dark: #244f3a;
+			--line: #e8e6de;
+			--orange: #e89057;
+		}
+
+		* { box-sizing: border-box; }
+		body {
+			margin: 0;
+			min-height: 100vh;
+			color: var(--ink);
+			background:
+				radial-gradient(ellipse at 85% 5%, rgba(228, 235, 214, .7), transparent 30rem),
+				var(--paper);
+			font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+		}
+		button, textarea, input { font: inherit; }
+		button { cursor: pointer; }
+		.page { width: min(1080px, calc(100% - 40px)); margin: 0 auto; padding: 34px 0 48px; }
+		header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px; }
+		.brand { display: flex; gap: 11px; align-items: center; font-weight: 800; letter-spacing: .04em; }
+		.brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: var(--green); color: white; font-size: 20px; }
+		.header-note { color: var(--muted); font-size: 13px; }
+		.intro { margin-bottom: 28px; }
+		.eyebrow { color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .15em; }
+		h1 { margin: 8px 0 10px; font-size: clamp(32px, 5vw, 48px); letter-spacing: -.04em; }
+		.intro p { margin: 0; color: var(--muted); line-height: 1.7; }
+		.layout { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr); gap: 22px; align-items: stretch; }
+		.card { border: 1px solid rgba(225, 224, 215, .8); border-radius: 22px; background: rgba(255,255,255,.82); box-shadow: 0 14px 40px rgba(44, 51, 39, .045); }
+		.setup { padding: 26px; }
+		.card-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+		h2 { margin: 0; font-size: 17px; }
+		.count { color: var(--muted); font-size: 13px; }
+		textarea { display: block; width: 100%; min-height: 230px; resize: vertical; padding: 15px 16px; border: 1px solid var(--line); border-radius: 14px; outline: none; background: #fcfbf8; color: var(--ink); line-height: 1.9; transition: border-color .2s, box-shadow .2s; }
+		textarea:focus, input:focus { border-color: #83a28d; box-shadow: 0 0 0 3px rgba(47,104,77,.1); }
+		.hint { margin: 10px 0 22px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+		.options { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; padding-top: 18px; border-top: 1px solid var(--line); }
+		.check-label { display: flex; align-items: center; gap: 9px; color: #515b52; font-size: 13px; cursor: pointer; }
+		input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--green); }
+		.quantity { display: flex; align-items: center; gap: 9px; color: #515b52; font-size: 13px; }
+		input[type="number"] { width: 58px; height: 36px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; outline: none; background: white; }
+		.draw-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 450px; padding: 28px; overflow: hidden; position: relative; color: white; background: var(--green); }
+		.draw-card::after { position: absolute; right: -75px; top: -115px; width: 275px; height: 275px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; content: ""; box-shadow: 0 0 0 28px rgba(255,255,255,.035), 0 0 0 56px rgba(255,255,255,.025); pointer-events: none; }
+		.draw-top, .draw-bottom { position: relative; z-index: 1; }
+		.draw-top { display: flex; justify-content: space-between; color: rgba(255,255,255,.72); font-size: 13px; }
+		.spark { color: #f5c77d; font-size: 22px; }
+		.result-area { position: relative; z-index: 1; display: grid; place-items: center; min-height: 235px; padding: 25px 0; text-align: center; }
+		.result-placeholder { color: rgba(255,255,255,.64); font-size: 15px; line-height: 1.8; }
+		.result { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+		.winner { padding: 10px 17px; border: 1px solid rgba(255,255,255,.28); border-radius: 999px; background: rgba(255,255,255,.12); font-size: clamp(23px, 4vw, 35px); font-weight: 800; animation: pop .38s cubic-bezier(.2,.8,.2,1) both; }
+		@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.92); } to { opacity: 1; transform: translateY(0) scale(1); } }
+		.draw-button { width: 100%; min-height: 54px; border: 0; border-radius: 13px; background: #f4c77d; color: #263b2b; font-weight: 800; transition: transform .15s, background .15s; }
+		.draw-button:hover { transform: translateY(-2px); background: #ffda99; }
+		.draw-button:active { transform: translateY(0); }
+		.draw-button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
+		.draw-footnote { margin: 12px 0 0; color: rgba(255,255,255,.65); font-size: 11px; text-align: center; }
+		.history-card { margin-top: 22px; padding: 23px 26px; }
+		.history-title { display: flex; justify-content: space-between; align-items: center; }
+		.history-empty { margin: 17px 0 3px; color: var(--muted); font-size: 13px; }
+		.history-list { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+		.history-item { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border-radius: 10px; background: #f5f4ee; font-size: 13px; }
+		.history-time { color: #92978f; font-size: 11px; }
+		.text-button { padding: 6px 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; }
+		.text-button:hover { color: var(--green); }
+		.toast { position: fixed; left: 50%; bottom: 24px; z-index: 5; padding: 11px 16px; border-radius: 11px; background: #20271f; color: white; font-size: 13px; opacity: 0; transform: translate(-50%, 8px); pointer-events: none; transition: .2s; }
+		.toast.show { opacity: 1; transform: translate(-50%, 0); }
+		@media (max-width: 760px) {
+			.page { width: min(100% - 28px, 540px); padding-top: 23px; }
+			header { margin-bottom: 36px; }
+			.header-note { display: none; }
+			.layout { grid-template-columns: 1fr; }
+			.draw-card { min-height: 390px; }
+			.result-area { min-height: 190px; }
+		}
+		@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+	</style>
+</head>
+<body>
+	<main class="page">
+		<header>
+			<div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><span>好運抽籤</span></div>
+			<div class="header-note">公平・簡單・一點點期待</div>
+		</header>
+
+		<section class="intro" aria-labelledby="page-title">
+			<div class="eyebrow">LET THE LUCK DECIDE</div>
+			<h1 id="page-title">今天輪到誰？</h1>
+			<p>把名字放進籤筒，剩下的就交給好運吧。</p>
+		</section>
+
+		<section class="layout" aria-label="抽籤設定與結果">
+			<div class="card setup">
+				<div class="card-heading">
+					<h2>籤筒名單</h2>
+					<span class="count" id="candidate-count">0 位候選人</span>
+				</div>
+				<textarea id="names" aria-label="候選人名單，每行一個名字" placeholder="每行輸入一個名字，例如：&#10;小明&#10;小華&#10;小美"></textarea>
+				<p class="hint">一行一個名字；空白行會自動忽略。相同名字會視為不同籤。</p>
+				<div class="options">
+					<label class="check-label"><input id="remove-winners" type="checkbox" checked> 抽中後從名單移除</label>
+					<label class="quantity" for="draw-count">一次抽出 <input id="draw-count" type="number" min="1" max="99" value="1"> 位</label>
+				</div>
+			</div>
+
+			<div class="card draw-card">
+				<div class="draw-top"><span>本次幸運兒</span><span class="spark" aria-hidden="true">✦</span></div>
+				<div class="result-area" id="result-area" aria-live="polite" aria-atomic="true">
+					<div class="result-placeholder">名單準備好了嗎？<br>按下按鈕揭曉幸運兒。</div>
+				</div>
+				<div class="draw-bottom">
+					<button class="draw-button" id="draw-button" type="button">✦　開始抽籤</button>
+					<p class="draw-footnote">每一次抽籤都獨立隨機，祝你好運！</p>
+				</div>
+			</div>
+		</section>
+
+		<section class="card history-card" aria-labelledby="history-heading">
+			<div class="history-title">
+				<h2 id="history-heading">抽籤紀錄</h2>
+				<button class="text-button" id="clear-history" type="button">清除紀錄</button>
+			</div>
+			<p class="history-empty" id="history-empty">還沒有抽籤紀錄。</p>
+			<div class="history-list" id="history-list"></div>
+		</section>
+	</main>
+	<div class="toast" id="toast" role="status"></div>
+
+	<script>
+		const namesInput = document.querySelector('#names');
+		const countLabel = document.querySelector('#candidate-count');
+		const drawCountInput = document.querySelector('#draw-count');
+		const removeWinnersInput = document.querySelector('#remove-winners');
+		const drawButton = document.querySelector('#draw-button');
+		const resultArea = document.querySelector('#result-area');
+		const historyList = document.querySelector('#history-list');
+		const historyEmpty = document.querySelector('#history-empty');
+		const toast = document.querySelector('#toast');
+		let history = [];
+		let toastTimer;
+
+		function candidates() {
+			return namesInput.value.split(/\r?\n/).map(name => name.trim()).filter(Boolean);
+		}
+
+		function updateCount() {
+			const total = candidates().length;
+			countLabel.textContent = `${total} 位候選人`;
+			drawButton.disabled = total === 0;
+		}
+
+		function showToast(message) {
+			toast.textContent = message;
+			toast.classList.add('show');
+			clearTimeout(toastTimer);
+			toastTimer = setTimeout(() => toast.classList.remove('show'), 2300);
+		}
+
+		function renderHistory() {
+			historyList.replaceChildren();
+			historyEmpty.hidden = history.length > 0;
+			[...history].reverse().forEach(entry => {
+				const item = document.createElement('div');
+				item.className = 'history-item';
+				const names = document.createElement('strong');
+				names.textContent = entry.names.join('、');
+				const time = document.createElement('span');
+				time.className = 'history-time';
+				time.textContent = entry.time;
+				item.append(names, time);
+				historyList.append(item);
+			});
+		}
+
+		function randomIndex(max) {
+			if (window.crypto && window.crypto.getRandomValues) {
+				const range = 0x100000000;
+				const limit = range - (range % max);
+				const value = new Uint32Array(1);
+				do { window.crypto.getRandomValues(value); } while (value[0] >= limit);
+				return value[0] % max;
+			}
+			return Math.floor(Math.random() * max);
+		}
+
+		function draw() {
+			const pool = candidates();
+			const requested = Math.max(1, Math.min(99, Number.parseInt(drawCountInput.value, 10) || 1));
+			drawCountInput.value = requested;
+			if (!pool.length) {
+				showToast('請先輸入至少一位候選人');
+				return;
+			}
+			if (requested > pool.length) {
+				showToast(`目前只有 ${pool.length} 位候選人，請調整抽出人數`);
+				return;
+			}
+
+			const winners = [];
+			for (let i = 0; i < requested; i++) {
+				const index = randomIndex(pool.length);
+				winners.push(pool.splice(index, 1)[0]);
+			}
+
+			resultArea.replaceChildren();
+			const result = document.createElement('div');
+			result.className = 'result';
+			winners.forEach((name, index) => {
+				const winner = document.createElement('span');
+				winner.className = 'winner';
+				winner.style.animationDelay = `${index * 70}ms`;
+				winner.textContent = name;
+				result.append(winner);
+			});
+			resultArea.append(result);
+
+			if (removeWinnersInput.checked) {
+				// Remove one matching line per drawn ticket so duplicate names remain distinct tickets.
+				const remaining = candidates();
+				winners.forEach(name => {
+					const index = remaining.indexOf(name);
+					if (index !== -1) remaining.splice(index, 1);
+				});
+				namesInput.value = remaining.join('\n');
+				updateCount();
+			}
+
+			history.push({ names: winners, time: new Intl.DateTimeFormat('zh-TW', { hour: '2-digit', minute: '2-digit' }).format(new Date()) });
+			renderHistory();
+		}
+
+		namesInput.addEventListener('input', updateCount);
+		drawButton.addEventListener('click', draw);
+		document.querySelector('#clear-history').addEventListener('click', () => {
+			history = [];
+			renderHistory();
+			showToast('抽籤紀錄已清除');
+		});
+		updateCount();
+	</script>
+</body>
+</html>
